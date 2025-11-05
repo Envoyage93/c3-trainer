@@ -1,0 +1,350 @@
+<!doctype html>
+<!-- VERSION: r9 (Death logic reachable + timers; tension & bleed tweaks) -->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Combat Trauma Simulator</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <div class="container brand">
+      <div class="logo" aria-hidden="true"></div>
+      <h1>Combat Trauma Simulator</h1>
+      <span class="pill" style="margin-left:auto">Training use only</span>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="grid">
+      <!-- LEFT -->
+      <section class="card">
+        <h2>Scenario Setup</h2>
+        <div class="row">
+          <div class="col" style="flex:1">
+            <label for="moi">MOI</label>
+            <select id="moi">
+              <option value="blast">Blast + Amp</option>
+              <option value="gsw_torso">GSW Torso</option>
+              <option value="gsw_chest">GSW Chest (Left)</option>
+              <option value="mvc">MVC Polytrauma</option>
+            </select>
+          </div>
+          <div class="col" style="width:110px">
+            <label for="mass">Mass (kg)</label>
+            <input id="mass" type="number" value="80" min="40" max="140" />
+          </div>
+          <div class="col" style="width:140px">
+            <label for="temp">Environment</label>
+            <select id="temp">
+              <option value="warm">Temperate</option>
+              <option value="cold">Cold</option>
+              <option value="hot">Hot</option>
+              <option value="alt">High Altitude</option>
+            </select>
+          </div>
+          <div class="col" style="width:140px">
+            <label for="eta">Evac ETA (min)</label>
+            <input id="eta" type="number" value="20" />
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <button id="start" class="btn btn-accent no-print" title="Space">Start</button>
+          <button id="pause" class="btn no-print" title="Space">Pause</button>
+          <button id="reset" class="btn no-print" title="R">Reset</button>
+          <span class="pill" id="clock" aria-live="polite">T+00:00</span>
+          <span class="pill" id="scorePill">Score: 0</span>
+          <span class="pill" id="statusPill" title="Status">Status: READY</span>
+        </div>
+
+        <div class="section">
+          <h2>MARCH Checklist</h2>
+          <div class="march-rail" id="marchRail">
+            <div class="march-item"><span class="tag">M</span><span class="title">Massive Hemorrhage</span><span class="state bad" id="m_state">UNCONTROLLED</span></div>
+            <div class="march-item"><span class="tag">A</span><span class="title">Airway</span><span class="state warn" id="a_state">UNCLEAR</span></div>
+            <div class="march-item"><span class="tag">R</span><span class="title">Respiration</span><span class="state warn" id="r_state">COMPROMISED?</span></div>
+            <div class="march-item"><span class="tag">C</span><span class="title">Circulation</span><span class="state bad" id="c_state">SHOCK</span></div>
+            <div class="march-item"><span class="tag">H</span><span class="title">Hypothermia/Head</span><span class="state warn" id="h_state">RISK</span></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>Interventions — MARCH PAWS</h2>
+          <div class="accordion" id="interventionsAcc">
+            <details class="acc-item" open>
+              <summary class="acc-header">
+                <div class="acc-left"><span class="acc-knot">M</span><span class="acc-title">Massive Hemorrhage</span></div><span class="acc-chevron">›</span>
+              </summary>
+              <div class="acc-body"><div>
+                <p class="acc-sub">Control external bleeding, pelvis, early TXA, balanced resus.</p>
+                <div class="acc-toolbar">
+                  <button class="btn-bad" id="tourniquet" title="Remaining shows on hover">Tourniquet</button>
+                  <button class="btn" id="pack">Pack &amp; Pressure</button>
+                  <button class="btn" id="pelvic">Pelvic Binder</button>
+                  <button class="btn-good" data-drug="txa2g">TXA 2 g</button>
+                  <button class="btn-good" id="wb250">Whole Blood 250 mL</button>
+                  <button class="btn-warn" id="cryst500">Crystalloid 500 mL</button>
+                  <button class="btn" id="calcium">Calcium Gluconate</button>
+                </div>
+              </div></div>
+            </details>
+
+            <details class="acc-item">
+              <summary class="acc-header">
+                <div class="acc-left"><span class="acc-knot">A</span><span class="acc-title">Airway</span></div><span class="acc-chevron">›</span>
+              </summary>
+              <div class="acc-body"><div>
+                <p class="acc-sub">Basic to surgical—select the least invasive that works.</p>
+                <div class="acc-toolbar">
+                  <button class="btn" id="jaw">Jaw Thrust</button>
+                  <button class="btn" id="npa">NPA</button>
+                  <button class="btn" id="igel">i-gel</button>
+                  <button class="btn" id="cric">Cric</button>
+                </div>
+              </div></div>
+            </details>
+
+            <details class="acc-item">
+              <summary class="acc-header">
+                <div class="acc-left"><span class="acc-knot">R</span><span class="acc-title">Respiration</span></div><span class="acc-chevron">›</span>
+              </summary>
+              <div class="acc-body"><div>
+                <p class="acc-sub">Seal, decompress, drain, ventilate; target SpO₂ &amp; EtCO₂.</p>
+                <div class="acc-toolbar">
+                  <button class="btn" id="seal">Occlusive Seal</button>
+                  <button class="btn" id="nd_left">Needle D (L)</button>
+                  <button class="btn" id="nd_right">Needle D (R)</button>
+                  <button class="btn" id="fingerT_left">Finger T (L)</button>
+                  <button class="btn" id="fingerT_right">Finger T (R)</button>
+                  <button class="btn" id="ct_left">Chest Tube (STERILE L)</button>
+                  <button class="btn" id="ct_right">Chest Tube (STERILE R)</button>
+                  <button class="btn" id="o2">O₂</button>
+                  <button class="btn" id="bvm">BVM + EtCO₂</button>
+                </div>
+              </div></div>
+            </details>
+
+            <details class="acc-item">
+              <summary class="acc-header">
+                <div class="acc-left"><span class="acc-knot">C</span><span class="acc-title">Circulation (Resus/Pressors)</span></div><span class="acc-chevron">›</span>
+              </summary>
+              <div class="acc-body"><div>
+                <p class="acc-sub">Vasoactive support as needed; avoid over-resuscitation.</p>
+                <div class="acc-toolbar">
+                  <button class="btn" id="norepi_on">Start Norepi</button>
+                  <button class="btn" id="norepi_off">Stop Norepi</button>
+                </div>
+              </div></div>
+            </details>
+
+            <details class="acc-item">
+              <summary class="acc-header">
+                <div class="acc-left"><span class="acc-knot">H</span><span class="acc-title">Hypothermia / Head</span></div><span class="acc-chevron">›</span>
+              </summary>
+              <div class="acc-body"><div>
+                <p class="acc-sub">Prevent cold stress; TBI targets SBP ≥100, EtCO₂ 35–40.</p>
+                <div class="acc-toolbar">
+                  <button class="btn" id="hpmk">Hypothermia Kit</button>
+                  <button class="btn" id="tbi">TBI Bundle</button>
+                </div>
+              </div></div>
+            </details>
+
+            <details class="acc-item">
+              <summary class="acc-header">
+                <div class="acc-left"><span class="acc-knot">P</span><span class="acc-title">Pain / Sedation / Nausea</span></div><span class="acc-chevron">›</span>
+              </summary>
+              <div class="acc-body"><div>
+                <p class="acc-sub">Analgesia ladder; avoid synergistic respiratory depression.</p>
+                <div class="acc-toolbar">
+                  <button class="btn" data-drug="ketamine_0_3">Ketamine 0.3 mg/kg</button>
+                  <button class="btn" data-drug="fent_50">Fentanyl 50 μg</button>
+                  <button class="btn" data-drug="midaz_1">Midazolam 1 mg</button>
+                  <button class="btn" data-drug="ondansetron_4">Ondansetron 4 mg</button>
+                </div>
+              </div></div>
+            </details>
+
+            <details class="acc-item">
+              <summary class="acc-header">
+                <div class="acc-left"><span class="acc-knot">A</span><span class="acc-title">Antibiotics</span></div><span class="acc-chevron">›</span>
+              </summary>
+              <div class="acc-body"><div>
+                <p class="acc-sub">Ranger Medic options: open fractures / penetrating torso.</p>
+                <div class="acc-toolbar">
+                  <button class="btn" data-abx="moxi_400_po">Moxifloxacin 400 mg PO</button>
+                  <button class="btn" data-abx="ertapenem_1g_im_iv">Ertapenem 1 g IM/IV</button>
+                  <button class="btn" data-abx="cefotetan_2g_iv">Cefotetan 2 g IV</button>
+                </div>
+              </div></div>
+            </details>
+
+            <details class="acc-item">
+              <summary class="acc-header">
+                <div class="acc-left"><span class="acc-knot">W</span><span class="acc-title">Wounds</span></div><span class="acc-chevron">›</span>
+              </summary>
+              <div class="acc-body"><div>
+                <p class="acc-sub">Local care for soft-tissue injuries; pair with the Injury Map.</p>
+                <div class="acc-toolbar">
+                  <button class="btn" id="wound_irrigate">Irrigate &amp; Debride</button>
+                  <button class="btn" id="wound_dress">Pressure Dressing</button>
+                  <button class="btn" id="wound_hemo">Hemostatic Gauze</button>
+                  <button class="btn" id="wound_reassess">Reassess Bleeding</button>
+                </div>
+              </div></div>
+            </details>
+
+            <details class="acc-item">
+              <summary class="acc-header">
+                <div class="acc-left"><span class="acc-knot">S</span><span class="acc-title">Splinting</span></div><span class="acc-chevron">›</span>
+              </summary>
+              <div class="acc-body"><div>
+                <p class="acc-sub">Stabilize suspected fractures; reduce pain and secondary injury.</p>
+                <div class="acc-toolbar">
+                  <button class="btn" id="splint_upper">Splint — Upper Limb</button>
+                  <button class="btn" id="splint_lower">Splint — Lower Limb</button>
+                  <button class="btn" id="sling_swathe">Sling &amp; Swathe</button>
+                </div>
+              </div></div>
+            </details>
+
+            <details class="acc-item">
+              <summary class="acc-header">
+                <div class="acc-left"><span class="acc-knot">+</span><span class="acc-title">Free Interventions</span></div><span class="acc-chevron">›</span>
+              </summary>
+              <div class="acc-body"><div>
+                <p class="acc-sub">Create ad-hoc actions to log (and optionally score).</p>
+                <div class="acc-toolbar" id="freeBtns"></div>
+                <div class="acc-toolbar" style="margin-top:6px">
+                  <input id="freeLabel" class="input-free" placeholder="Label (e.g., 'IV Access', 'Splint Tib/Fib')">
+                  <input id="freeScore" type="number" class="input-free" style="max-width:120px" placeholder="+/- Score">
+                  <button class="btn" id="freeAdd">Add Button</button>
+                </div>
+              </div></div>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENTER -->
+      <section class="card">
+        <h2>Patient HUD</h2>
+        <div class="vitals" id="vitals"></div>
+
+        <div class="section">
+          <h2>Injury Map</h2>
+          <div class="body-wrap">
+            <div style="flex:1">
+              <div class="body-toolbar" style="display:flex; gap:8px; margin-bottom:8px">
+                <select id="woundType" class="chip" title="Wound type">
+                  <option value="bleed">Bleed</option>
+                  <option value="burn">Burn</option>
+                  <option value="fx">Fracture</option>
+                  <option value="pen">Penetrating</option>
+                </select>
+                <select id="facing" class="chip" title="Front/back">
+                  <option value="front">Front</option>
+                  <option value="back">Back</option>
+                </select>
+                <button id="clearMarkers" class="btn">Clear</button>
+                <button id="clearMarkers" class="btn">Clear</button>
+<button id="undo" class="btn">Undo</button>
+<button id="redo" class="btn">Redo</button>
+<button id="exportScenario" class="btn">Export Scenario JSON</button>
+              </div>
+
+              <div id="canvasFront" class="body-canvas" role="img" aria-label="Body map (front)"></div>
+              <div id="canvasBack"  class="body-canvas" role="img" aria-label="Body map (back)" style="display:none"></div>
+
+              <div class="legend" style="margin-top:8px">
+                <span class="l-bleed"><i></i> Bleed</span>
+                <span class="l-burn"><i></i> Burn</span>
+                <span class="l-fx"><i></i> Fracture</span>
+                <span class="l-pen"><i></i> Penetrating</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Advanced drawer: hidden metrics + sparklines -->
+        <details class="acc-item" id="advTrends" style="margin-top:10px">
+          <summary class="acc-header">
+            <div class="acc-left"><span class="acc-knot">⚙︎</span><span class="acc-title">Advanced — Metrics & Trends</span></div>
+            <span class="acc-chevron">›</span>
+          </summary>
+          <div class="acc-body"><div>
+            <p class="acc-sub">Additional metrics and rolling 5-minute sparklines (updates each second when open).</p>
+
+            <div class="vitals" id="vitalsAdvanced" style="margin-bottom:10px"></div>
+
+            <div class="trend-grid">
+              <div class="trend-card"><div>HR</div><canvas id="trend_hr" width="260" height="60"></canvas></div>
+              <div class="trend-card"><div>SBP</div><canvas id="trend_sbp" width="260" height="60"></canvas></div>
+              <div class="trend-card"><div>MAP</div><canvas id="trend_map" width="260" height="60"></canvas></div>
+              <div class="trend-card"><div>SpO₂</div><canvas id="trend_spo2" width="260" height="60"></canvas></div>
+              <div class="trend-card"><div>RR</div><canvas id="trend_rr" width="260" height="60"></canvas></div>
+              <div class="trend-card"><div>EtCO₂</div><canvas id="trend_etco2" width="260" height="60"></canvas></div>
+            </div>
+          </div></div>
+        </details>
+        <!-- INSTRUCTOR PANEL -->
+<details class="acc-item" id="instrPanel" style="margin-top:10px">
+  <summary class="acc-header">
+    <div class="acc-left"><span class="acc-knot">🧰</span>
+      <span class="acc-title">Instructor Panel — Overrides</span>
+    </div>
+    <span class="acc-chevron">›</span>
+  </summary>
+  <div class="acc-body"><div>
+    <p class="acc-sub">Force states or nudge vitals. These actions don’t change inventory or score.</p>
+
+    <div class="acc-toolbar" style="margin-bottom:8px">
+      <button class="btn-bad"   id="forceDecomp">Force Decomp</button>
+      <button class="btn-bad"   id="forceDeath">Force Death</button>
+      <button class="btn-good"  id="forceRecomp">Force Recomp</button>
+    </div>
+
+    <div id="instrRows" class="instr-rows"></div>
+  </div></div>
+</details>
+      </section>
+
+      <!-- RIGHT -->
+      <section class="card">
+        <h2>TCCC Card</h2>
+        <div style="display:flex; flex-direction:column; gap:10px">
+          <div style="border:1px solid #26304a;border-radius:10px;background:#0e1424;padding:8px">
+            <div style="font-size:12px;color:#aeb6c9">MIST</div>
+            <div id="mist" style="font-weight:700;margin-top:4px">—</div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:28px 1fr;gap:8px">
+            <div class="pill" style="text-align:center">M</div><div id="Mstat" class="pill" style="justify-content:space-between;display:flex">—</div>
+            <div class="pill" style="text-align:center">A</div><div id="Astat" class="pill" style="justify-content:space-between;display:flex">—</div>
+            <div class="pill" style="text-align:center">R</div><div id="Rstat" class="pill" style="justify-content:space-between;display:flex">—</div>
+            <div class="pill" style="text-align:center">C</div><div id="Cstat" class="pill" style="justify-content:space-between;display:flex">—</div>
+            <div class="pill" style="text-align:center">H</div><div id="Hstat" class="pill" style="justify-content:space-between;display:flex">—</div>
+          </div>
+
+          <div class="toolbar no-print">
+            <button id="printAAR" class="btn-good">Print AAR</button>
+            <button id="exportJSON" class="btn">Export JSON</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>Event Log</h2>
+          <div class="log" id="log" aria-live="polite"></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
+
+
+
